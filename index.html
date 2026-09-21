@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Career Path Analyzer</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+
+        .card {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        #results-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #results-container::-webkit-scrollbar-thumb {
+            background-color: #6366f1;
+            border-radius: 3px;
+        }
+
+        #results-container::-webkit-scrollbar-track {
+            background: #e0e7ff;
+        }
+
+        .pdf-content {
+            padding: 20px;
+            background-color: white;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+    <div class="w-full max-w-4xl">
+
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">
+                Skill Match & Career Navigator
+            </h1>
+
+            <p class="text-lg text-gray-500 mt-2">
+                Find out if you're ready for your dream job and what to study next.
+            </p>
+        </header>
+
+        <div class="card bg-white p-6 md:p-10 rounded-2xl border border-gray-100">
+
+            <!-- Job Role -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div>
+                    <label
+                        for="job-role"
+                        class="block text-sm font-medium text-gray-700 mb-2">
+                        Target Job Role
+                    </label>
+
+                    <input
+                        type="text"
+                        id="job-role"
+                        placeholder="e.g., Senior Data Scientist"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                        value="Math Lecturer">
+                </div>
+
+            </div>
+
+            <!-- Skills -->
+            <div class="mt-6">
+
+                <label
+                    for="user-input"
+                    class="block text-sm font-medium text-gray-700 mb-2">
+                    Your Skills and Background
+                </label>
+
+                <textarea
+                    id="user-input"
+                    rows="5"
+                    placeholder="e.g., I am highly skilled in probability, graph theory, and abstract algebra. I have 5 years of experience teaching at the university level."
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 resize-none">I am proficient in probability, linear algebra, and discrete mathematics. I also have basic knowledge of differential equations.</textarea>
+
+            </div>
+
+            <!-- Analyze Button -->
+            <button
+                id="analyze-button"
+                class="w-full mt-8 py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 flex items-center justify-center"
+                onclick="analyzePlacement()">
+
+                <svg
+                    id="button-icon"
+                    class="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z">
+                    </path>
+
+                </svg>
+
+                <span id="button-text">
+                    Analyze My Fit
+                </span>
+
+            </button>
+
+            <!-- Loading -->
+            <div
+                id="loading-indicator"
+                class="mt-8 hidden text-center">
+
+                <div
+                    class="animate-spin inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full">
+                </div>
+
+                <p class="mt-2 text-indigo-600 font-medium">
+                    Analyzing skills and generating recommendations...
+                </p>
+
+            </div>
+
+            <!-- Results -->
+            <div
+                id="results-container"
+                class="mt-10 p-6 bg-indigo-50 border border-indigo-200 rounded-xl hidden max-h-96 overflow-y-auto">
+
+                <h2
+                    id="results-title"
+                    class="text-2xl font-bold text-indigo-800 mb-4">
+                    Analysis Results
+                </h2>
+
+                <div
+                    id="comparison-output"
+                    class="mb-4 text-gray-700">
+                </div>
+
+                <div
+                    id="recommendation-output"
+                    class="text-gray-800 leading-relaxed">
+                </div>
+
+            </div>
+
+            <!-- PDF Button -->
+            <button
+                id="download-pdf-button"
+                class="w-full mt-4 py-3 px-6 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 flex items-center justify-center hidden"
+                onclick="downloadPDF()">
+
+                <svg
+                    class="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
+                    </path>
+
+                </svg>
+
+                Download Analysis as PDF
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        // ============================================================
+        // GEMINI API CONFIGURATION
+        // ============================================================
+
+        const API_URL_BASE =
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
+
+        const model =
+            'gemini-2.5-flash-preview-09-2025';
+
+        /*
+         IMPORTANT:
+
+         Do NOT put a real Gemini API key directly into a public
+         GitHub repository.
+
+         For testing only, this can be temporarily supplied here.
+
+         Example:
+
+         const apiKey = "YOUR_API_KEY";
+
+         However, for a real deployed application, use a backend
+         server or serverless function to protect the API key.
+        */
+
+        const apiKey = "";
+
+
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
+
+        async function fetchWithRetry(
+            url,
+            options,
+            retries = 3
+        ) {
+
+            for (let i = 0; i < retries; i++) {
+
+                try {
+
+                    const response =
+                        await fetch(url, options);
+
+                    if (response.ok) {
+                        return response;
+                    }
+
+                    if (
+                        response.status === 429 &&
+                        i < retries - 1
+                    ) {
+
+                        const delay =
+                            Math.pow(2, i) * 1000 +
+                            Math.random() * 1000;
+
+                        await new Promise(
+                            resolve => setTimeout(resolve, delay)
+                        );
+
+                        continue;
+                    }
+
+                    throw new Error(
+                        `API request failed with status ${response.status}: ${await response.text()}`
+                    );
+
+                } catch (error) {
+
+                    if (i === retries - 1) {
+
+                        console.error(
+                            "Fetch failed after all retries:",
+                            error
+                        );
+
+                        throw error;
+                    }
+
+                    const delay =
+                        Math.pow(2, i) * 1000 +
+                        Math.random() * 1000;
+
+                    await new Promise(
+                        resolve => setTimeout(resolve, delay)
+                    );
+                }
+            }
+        }
+
+
+        // ============================================================
+        // TEXT TO HTML LIST
+        // ============================================================
+
+        function textToHtmlList(text) {
+
+            const items =
+                text
+                    .split('\n')
+                    .filter(
+                        line => line.trim().length > 0
+                    );
+
+            let html =
+                '<ul class="list-disc list-inside space-y-1">';
+
+            items.forEach(item => {
+
+                let cleanItem =
+                    item
+                        .trim()
+                        .replace(/^[\*\-\d\.\s]+/, '');
+
+                if (cleanItem) {
+
+                    html +=
+                        `<li class="ml-4">${cleanItem}</li>`;
+                }
+
+            });
+
+            html += '</ul>';
+
+            return html;
+        }
+
+
+        // ============================================================
+        // PDF GENERATION
+        // ============================================================
+
+        function downloadPDF() {
+
+            const resultsContainer =
+                document.getElementById(
+                    'results-container'
+                );
+
+            const jobRole =
+                document
+                    .getElementById('job-role')
+                    .value
+                    .trim();
+
+            const options = {
+
+                margin: 1,
+
+                filename:
+                    `Career_Analysis_${jobRole.replace(/\s/g, "_")}.pdf`,
+
+                image: {
+                    type: 'jpeg',
+                    quality: 0.98
+                },
+
+                html2canvas: {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                },
+
+                jsPDF: {
+                    unit: 'in',
+                    format: 'letter',
+                    orientation: 'portrait'
+                }
+            };
+
+
+            const pdfContent =
+                resultsContainer.cloneNode(true);
+
+            pdfContent.classList.remove('hidden');
+
+            pdfContent.style.maxHeight = 'none';
+
+            pdfContent.style.overflow = 'visible';
+
+
+            html2pdf()
+                .from(pdfContent)
+                .set(options)
+                .save();
+        }
+
+
+        // ============================================================
+        // STEP 1: ANALYZE JOB ROLE AND USER SKILLS
+        // ============================================================
+
+        async function getAnalysisData(
+            jobRole,
+            userInput
+        ) {
+
+            const analysisSchema = {
+
+                type: "OBJECT",
+
+                properties: {
+
+                    jobRole: {
+                        type: "STRING",
+                        description:
+                            "The exact job role provided."
+                    },
+
+                    requiredSkills: {
+
+                        type: "ARRAY",
+
+                        description:
+                            "A list of 5 to 7 key skills and knowledge areas required for this specific job role.",
+
+                        items: {
+                            type: "STRING"
+                        }
+                    },
+
+                    extractedUserSkills: {
+
+                        type: "ARRAY",
+
+                        description:
+                            "A list of all technical and soft skills and knowledge areas explicitly mentioned in the user input.",
+
+                        items: {
+                            type: "STRING"
+                        }
+                    }
+                },
+
+                propertyOrdering: [
+                    "jobRole",
+                    "requiredSkills",
+                    "extractedUserSkills"
+                ]
+            };
+
+
+            const userQuery = `
+You are a career analysis engine.
+
+Analyze the following job role and candidate profile.
+
+Job Role: "${jobRole}"
+
+Candidate Profile: "${userInput}"
+
+Based on this, STRICTLY output a JSON object:
+
+1. requiredSkills:
+List 5-7 core skills for the Job Role.
+
+2. extractedUserSkills:
+List all relevant skills the candidate explicitly mentions.
+`;
+
+
+            const payload = {
+
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: userQuery
+                            }
+                        ]
+                    }
+                ],
+
+                generationConfig: {
+
+                    responseMimeType:
+                        "application/json",
+
+                    responseSchema:
+                        analysisSchema
+                }
+            };
+
+
+            const url =
+                `${API_URL_BASE}?key=${apiKey}`;
+
+
+            const response =
+                await fetchWithRetry(
+                    url,
+                    {
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type':
+                                'application/json'
+                        },
+
+                        body:
+                            JSON.stringify(payload)
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            const jsonText =
+                result
+                    .candidates?.[0]
+                    ?.content
+                    ?.parts?.[0]
+                    ?.text;
+
+
+            if (!jsonText) {
+
+                throw new Error(
+                    "API failed to return structured content."
+                );
+            }
+
+
+            try {
+
+                return JSON.parse(jsonText);
+
+            } catch (e) {
+
+                console.error(
+                    "Failed to parse JSON response:",
+                    jsonText
+                );
+
+                throw new Error(
+                    "Invalid JSON structure returned from the model."
+                );
+            }
+        }
+
+
+        // ============================================================
+        // STEP 2: GENERATE COURSE RECOMMENDATIONS
+        // ============================================================
+
+        async function generateRecommendation(
+            jobRole,
+            missingSkills
+        ) {
+
+            const recommendationSchema = {
+
+                type: "OBJECT",
+
+                properties: {
+
+                    introMessage: {
+
+                        type: "STRING",
+
+                        description:
+                            "A brief, encouraging introductory message about the skills gap."
+                    },
+
+                    missingSkillsOverview: {
+
+                        type: "STRING",
+
+                        description:
+                            "A short summary of the key missing skills."
+                    },
+
+                    courseRecommendations: {
+
+                        type: "ARRAY",
+
+                        description:
+                            "A list of 3-5 specific course recommendations from YouTube or Udemy to address missing skills.",
+
+                        items: {
+
+                            type: "OBJECT",
+
+                            properties: {
+
+                                title: {
+
+                                    type: "STRING",
+
+                                    description:
+                                        "Title of the course/video."
+                                },
+
+                                platform: {
+
+                                    type: "STRING",
+
+                                    description:
+                                        "Platform such as YouTube or Udemy."
+                                },
+
+                                description: {
+
+                                    type: "STRING",
+
+                                    description:
+                                        "Brief description of what the course/video covers and how it helps."
+                                },
+
+                                url: {
+
+                                    type: "STRING",
+
+                                    format: "uri",
+
+                                    description:
+                                        "Direct URL to the Udemy course, or an empty string/null for YouTube recommendations."
+                                }
+                            },
+
+                            required: [
+                                "title",
+                                "platform",
+                                "description"
+                            ]
+                        }
+                    },
+
+                    nextSteps: {
+
+                        type: "STRING",
+
+                        description:
+                            "Concluding advice on how to proceed after taking courses."
+                    }
+                },
+
+                required: [
+                    "introMessage",
+                    "missingSkillsOverview",
+                    "courseRecommendations",
+                    "nextSteps"
+                ]
+            };
+
+
+            const userQuery = `
+You are a helpful career coach.
+
+The user wants to be a ${jobRole}.
+
+They are missing the following key skills:
+
+${missingSkills.join(', ')}
+
+Provide a structured JSON response with specific,
+actionable course recommendations from YouTube and Udemy
+to help them close this skill gap.
+
+Focus on providing:
+
+- An encouraging introMessage.
+- A missingSkillsOverview.
+- 3-5 courseRecommendations.
+- Each course must have a title, platform and description.
+- Only provide a valid direct URL if the platform is Udemy.
+- If the platform is YouTube, the url property must be empty or null.
+- Practical nextSteps after completing the courses.
+`;
+
+
+            const payload = {
+
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: userQuery
+                            }
+                        ]
+                    }
+                ],
+
+                generationConfig: {
+
+                    responseMimeType:
+                        "application/json",
+
+                    responseSchema:
+                        recommendationSchema
+                }
+            };
+
+
+            const url =
+                `${API_URL_BASE}?key=${apiKey}`;
+
+
+            const response =
+                await fetchWithRetry(
+                    url,
+                    {
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type':
+                                'application/json'
+                        },
+
+                        body:
+                            JSON.stringify(payload)
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            const jsonText =
+                result
+                    .candidates?.[0]
+                    ?.content
+                    ?.parts?.[0]
+                    ?.text;
+
+
+            if (!jsonText) {
+
+                throw new Error(
+                    "API failed to return structured recommendation content."
+                );
+            }
+
+
+            try {
+
+                return JSON.parse(jsonText);
+
+            } catch (e) {
+
+                console.error(
+                    "Failed to parse JSON recommendation response:",
+                    jsonText
+                );
+
+                throw new Error(
+                    "Invalid JSON structure for recommendations returned from the model."
+                );
+            }
+        }
+
+
+        // ============================================================
+        // MAIN APPLICATION FUNCTION
+        // ============================================================
+
+        async function analyzePlacement() {
+
+            const jobRole =
+                document
+                    .getElementById('job-role')
+                    .value
+                    .trim();
+
+
+            const userInput =
+                document
+                    .getElementById('user-input')
+                    .value
+                    .trim();
+
+
+            const resultsContainer =
+                document.getElementById(
+                    'results-container'
+                );
+
+
+            const loadingIndicator =
+                document.getElementById(
+                    'loading-indicator'
+                );
+
+
+            const comparisonOutput =
+                document.getElementById(
+                    'comparison-output'
+                );
+
+
+            const recommendationOutput =
+                document.getElementById(
+                    'recommendation-output'
+                );
+
+
+            const analyzeButton =
+                document.getElementById(
+                    'analyze-button'
+                );
+
+
+            const downloadButton =
+                document.getElementById(
+                    'download-pdf-button'
+                );
+
+
+            // Validation
+
+            if (!jobRole || !userInput) {
+
+                alertUser(
+                    "Please enter both a target job role and your skills/background."
+                );
+
+                return;
+            }
+
+
+            // Reset results
+
+            resultsContainer.classList.add(
+                'hidden'
+            );
+
+            downloadButton.classList.add(
+                'hidden'
+            );
+
+            recommendationOutput.innerHTML =
+                '';
+
+            comparisonOutput.innerHTML =
+                '';
+
+
+            // Show loading
+
+            loadingIndicator.classList.remove(
+                'hidden'
+            );
+
+            analyzeButton.disabled =
+                true;
+
+
+            document.getElementById(
+                'button-text'
+            ).textContent =
+                'Analyzing...';
+
+
+            document.getElementById(
+                'button-icon'
+            ).classList.add(
+                'animate-pulse'
+            );
+
+
+            try {
+
+                // Get AI analysis
+
+                const analysis =
+                    await getAnalysisData(
+                        jobRole,
+                        userInput
+                    );
+
+
+                const required =
+                    new Set(
+                        analysis.requiredSkills.map(
+                            s => s.toLowerCase().trim()
+                        )
+                    );
+
+
+                const possessed =
+                    new Set(
+                        analysis.extractedUserSkills.map(
+                            s => s.toLowerCase().trim()
+                        )
+                    );
+
+
+                const missingSkills =
+                    analysis.requiredSkills
+                        .filter(requiredSkill => {
+
+                            return !possessed.has(
+                                requiredSkill
+                                    .toLowerCase()
+                                    .trim()
+                            );
+
+                        })
+                        .slice(0, 5);
+
+
+                let finalRecommendationHtml =
+                    '';
+
+
+                // Comparison section
+
+                let comparisonHtml = `
+
+                    <div class="mb-4">
+
+                        <p class="font-bold text-lg text-indigo-700">
+
+                            Job:
+                            ${analysis.jobRole}
+
+                        </p>
+
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <div class="p-3 bg-white rounded-lg border border-gray-200">
+
+                            <h3 class="font-semibold text-gray-800 mb-2">
+
+                                Required Skills
+
+                            </h3>
+
+                            ${textToHtmlList(
+                                analysis.requiredSkills.join('\n')
+                            )}
+
+                        </div>
+
+
+                        <div class="p-3 bg-white rounded-lg border border-gray-200">
+
+                            <h3 class="font-semibold text-gray-800 mb-2">
+
+                                Your Extracted Skills
+
+                            </h3>
+
+                            ${textToHtmlList(
+                                analysis.extractedUserSkills.join('\n')
+                            )}
+
+                        </div>
+
+                    </div>
+
+                `;
+
+
+                // ====================================================
+                // STRONG MATCH
+                // ====================================================
+
+                if (
+                    missingSkills.length === 0 ||
+                    missingSkills.length <
+                    analysis.requiredSkills.length / 2
+                ) {
+
+                    finalRecommendationHtml = `
+
+                        <p class="text-xl font-bold text-green-700">
+
+                            🎉 Excellent Match!
+
+                        </p>
+
+                        <p class="mt-3">
+
+                            Based on your input, you possess
+                            a strong foundation of the required
+                            skills for the
+                            <strong>${jobRole}</strong>
+                            role.
+
+                        </p>
+
+                        <p class="mt-3">
+
+                            Continue developing your skills
+                            and prepare for interviews by
+                            demonstrating your expertise in:
+
+                            <strong>
+                                ${analysis.requiredSkills
+                                    .slice(0, 3)
+                                    .join(', ')}
+                            </strong>
+
+                        </p>
+
+                    `;
+
+                }
+
+                // ====================================================
+                // SKILLS GAP
+                // ====================================================
+
+                else {
+
+                    comparisonHtml += `
+
+                        <p class="mt-4 text-red-600 font-semibold">
+
+                            ⚠ ${missingSkills.length}
+                            key skills are missing or not
+                            explicitly stated in your profile.
+
+                        </p>
+
+                    `;
+
+
+                    const recommendationData =
+                        await generateRecommendation(
+                            jobRole,
+                            missingSkills
+                        );
+
+
+                    // Create course cards
+
+                    let coursesHtml =
+                        recommendationData
+                            .courseRecommendations
+                            .map(course => {
+
+                                let linkUrl;
+
+                                let buttonText;
+
+                                let searchPlatform;
+
+
+                                // Udemy direct link
+
+                                if (
+                                    course.platform
+                                        .toLowerCase() ===
+                                        'udemy' &&
+
+                                    course.url &&
+
+                                    course.url.trim().length > 5
+                                ) {
+
+                                    linkUrl =
+                                        course.url.trim();
+
+                                    buttonText =
+                                        `View ${course.platform} Course`;
+
+                                }
+
+                                // YouTube search
+
+                                else if (
+                                    course.platform
+                                        .toLowerCase() ===
+                                        'youtube'
+                                ) {
+
+                                    searchPlatform =
+                                        'YouTube';
+
+
+                                    linkUrl =
+                                        `https://www.youtube.com/results?search_query=${encodeURIComponent(course.title)}`;
+
+
+                                    buttonText =
+                                        `Search on ${searchPlatform}`;
+
+                                }
+
+                                // Google fallback
+
+                                else {
+
+                                    searchPlatform =
+                                        'Google';
+
+
+                                    linkUrl =
+                                        `https://www.google.com/search?q=${encodeURIComponent(
+                                            course.title +
+                                            " " +
+                                            course.platform
+                                        )}`;
+
+
+                                    buttonText =
+                                        `Search on ${searchPlatform}`;
+                                }
+
+
+                                return `
+
+                                    <div class="mb-4 p-3 bg-indigo-100 rounded-lg border border-indigo-200">
+
+                                        <h4 class="font-semibold text-indigo-800">
+
+                                            ${course.title}
+
+                                            <span class="text-sm font-normal">
+
+                                                (${course.platform})
+
+                                            </span>
+
+                                        </h4>
+
+
+                                        <p class="text-gray-700 text-sm mt-1">
+
+                                            ${course.description}
+
+                                        </p>
+
+
+                                        <a
+                                            href="${linkUrl}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="text-indigo-600 hover:bg-indigo-700 hover:text-white transition duration-200 text-sm font-medium mt-2 py-1 px-2 rounded-lg bg-indigo-200 inline-flex items-center">
+
+                                            ${buttonText}
+
+                                            <svg
+                                                class="w-4 h-4 ml-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg">
+
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0h6v6m-6-6L10 14">
+                                                </path>
+
+                                            </svg>
+
+                                        </a>
+
+                                    </div>
+
+                                `;
+
+                            })
+                            .join('');
+
+
+                    // Final recommendation
+
+                    finalRecommendationHtml = `
+
+                        <p class="text-xl font-bold text-red-700">
+
+                            🚀 Skills Gap Identified
+
+                        </p>
+
+
+                        <p class="mt-3">
+
+                            ${recommendationData.introMessage}
+
+                        </p>
+
+
+                        <p class="mt-2 text-gray-700">
+
+                            ${recommendationData.missingSkillsOverview}
+
+                        </p>
+
+
+                        <h3 class="text-lg font-bold text-indigo-800 mt-5 mb-3">
+
+                            Recommended Courses & Actions
+
+                        </h3>
+
+
+                        <div class="space-y-4">
+
+                            ${coursesHtml}
+
+                        </div>
+
+
+                        <h3 class="text-lg font-bold text-indigo-800 mt-5 mb-3">
+
+                            Next Steps
+
+                        </h3>
+
+
+                        <p class="text-gray-700">
+
+                            ${recommendationData.nextSteps}
+
+                        </p>
+
+                    `;
+                }
+
+
+                // Display results
+
+                comparisonOutput.innerHTML =
+                    comparisonHtml;
+
+
+                recommendationOutput.innerHTML =
+                    finalRecommendationHtml;
+
+
+                resultsContainer.classList.remove(
+                    'hidden'
+                );
+
+
+                downloadButton.classList.remove(
+                    'hidden'
+                );
+
+            }
+
+
+            catch (error) {
+
+                console.error(
+                    "Analysis failed:",
+                    error
+                );
+
+
+                alertUser(
+                    `An error occurred during analysis. Please try again. Details: ${error.message}`
+                );
+
+            }
+
+
+            finally {
+
+                loadingIndicator.classList.add(
+                    'hidden'
+                );
+
+
+                analyzeButton.disabled =
+                    false;
+
+
+                document.getElementById(
+                    'button-text'
+                ).textContent =
+                    'Analyze My Fit';
+
+
+                document.getElementById(
+                    'button-icon'
+                ).classList.remove(
+                    'animate-pulse'
+                );
+
+
+                document.getElementById(
+                    'button-icon'
+                ).innerHTML = `
+
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z">
+                    </path>
+
+                `;
+            }
+        }
+
+
+        // ============================================================
+        // CUSTOM ALERT
+        // ============================================================
+
+        function alertUser(message) {
+
+            const customAlert =
+                document.createElement('div');
+
+
+            customAlert.className =
+                "fixed top-5 left-1/2 transform -translate-x-1/2 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg shadow-lg z-50 transition-opacity duration-300";
+
+
+            customAlert.textContent =
+                message;
+
+
+            document.body.appendChild(
+                customAlert
+            );
+
+
+            setTimeout(() => {
+
+                customAlert.style.opacity =
+                    '0';
+
+
+                setTimeout(() => {
+
+                    customAlert.remove();
+
+                }, 300);
+
+            }, 5000);
+        }
+
+    </script>
+
+</body>
+</html>
